@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace RussianRoulette
+using System.Windows.Forms;namespace RussianRoulette
 {
     static class Program
     {
