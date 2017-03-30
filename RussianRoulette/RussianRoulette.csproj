@@ -86,13 +86,7 @@
     <None Include="Resources\Erwin_Schrödinger.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\pusheen_dance.gif" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\CustomFont.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pusheen_excite.gif" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\excite.gif" />
