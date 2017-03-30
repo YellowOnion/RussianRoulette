@@ -45,11 +45,13 @@ namespace RussianRoulette.Tests
 
             game.State = State.Win;
             game.Position = 6;
+            game.DodgesLeft = 0;
 
             game = gameMaster.NewGame(game);
             Assert.AreEqual(game.State, State.Intro);
             Assert.AreEqual(game.Wins, 1);
             Assert.AreEqual(game.Position, 0);
+            Assert.AreEqual(game.DodgesLeft, 2);
 
         }
 

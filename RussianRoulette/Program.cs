@@ -61,6 +61,7 @@ namespace RussianRoulette
                     state.Loses += 1;
                     state.Position = 0;
                     state.State = State.Intro;
+                    state.DodgesLeft = 2;
                     break;
 
                 case State.Intro:
@@ -69,6 +70,7 @@ namespace RussianRoulette
                     break;
 
                 case State.Win:
+                    state.DodgesLeft = 2;
                     state.Wins += 1;
                     state.Position = 0;
                     state.State = State.Intro;
