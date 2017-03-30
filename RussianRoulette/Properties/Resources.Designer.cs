@@ -73,9 +73,39 @@ namespace RussianRoulette.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap excite {
+            get {
+                object obj = ResourceManager.GetObject("excite", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pusheen_back {
+            get {
+                object obj = ResourceManager.GetObject("pusheen_back", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap pusheen_dance {
             get {
                 object obj = ResourceManager.GetObject("pusheen_dance", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pusheen_excite {
+            get {
+                object obj = ResourceManager.GetObject("pusheen_excite", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

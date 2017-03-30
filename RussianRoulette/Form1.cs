@@ -7,96 +7,279 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using System.Drawing.Text;
 
 
 namespace RussianRoulette
 {
+    enum GameAction
+    {
+        Observe,
+        Evade
+    }
+    enum Prompt
+    {
+        Continue,
+        Fire,
+        Off
+    }
     public partial class Form1 : Form
     {
-        // a 16ms timer for smooth animations
-        Timer myTimer = new Timer();
+        private Prompt promptState = Prompt.Off;
 
-        // timer for flashing "dot" on text and bool to help.
-        Timer SecondsTimer = new Timer();
-        bool isOddSecond = true;
+        string promptText = "";
 
-        Timer textTimer = new Timer();
+        private static int dingerStartingPosition = -396;
 
-        // count dinger in through animation
-        private int dingerTimerCounter;
+        private int textSpeed = 50;
 
-        // some place to store text as it fills text prompt.
-        private string remainingText = "";
+        Task drawTask;
 
-        // control when to reset scrolling text
-        private bool newText = false;
+        private SemaphoreSlim continueSem = new SemaphoreSlim(0,1);
+        private SemaphoreSlim fireSem = new SemaphoreSlim(0,1);
+        private GameAction fireAction;
+
+        private Game gameMaster = new Game();
+
+        private GameState gameState = new GameState();
 
         public Form1()
         {
             InitializeComponent();
-            dingerTimerCounter = picDinger.Location.Y;
-            myTimer.Tick += animateDinger;
-            myTimer.Interval = 16;
-            myTimer.Start();
 
-            textTimer.Tick += animateTextGo;
-            textTimer.Interval = 100;
-            textTimer.Start();
-            
-            SecondsTimer.Tick += oddEven;
-            SecondsTimer.Interval = 1000;
-            SecondsTimer.Start();
-
+            // lets setup our custom font.
             PrivateFontCollection Player2Font = new PrivateFontCollection();
             Player2Font.AddFontFile("Resources/PressStart2P.ttf");
-            btnGO.Font = new Font(Player2Font.Families[0], btnGO.Font.Size);
+            var Font = new Font(Player2Font.Families[0], btnGO.Font.Size);
+            btnGO.Font = Font;
+            lblTurnText.Font = Font;
+            lblTurns.Font = Font;
+            lblWinsText.Font = Font;
+            lblWins.Font = Font;
+            lblLossesText.Font = Font;
+            lblLosses.Font = Font;
+            lblBlinds.Font = Font;
+            lblBlindsText.Font = Font;
 
-            picPusheen1.Enabled = false;
-            picPusheen1.Image.SelectActiveFrame(new FrameDimension(picPusheen1.Image.FrameDimensionsList[0]), 1);
+            // hide the action buttons until they are needed.
+            btnBlind.Visible = false;
+            btnObserve.Visible = false;  
         }
-
-        private void animateDinger(Object Timer, EventArgs e)
+        private async void Form1_Shown(object sender, EventArgs e)
         {
-            if (dingerTimerCounter == 0)
+            var btn = new Progress<string>(s => btnGO.Text = s);
+            drawTask = Task.Run(() => drawText(btn));
+            await GameScript();
+        }
+        private async Task GameScript()
+        {
+            // seed and game loop.
+            int seed = 554;
+            bool newgame = true;
+
+            while (newgame)
             {
-                myTimer.Tick -= animateDinger;
-                animateText("A wild Schrödinger appears!");
+                    switch (gameState.State)
+                    {
+                        case State.Intro:
+                            seed++;
+                            gameState = gameMaster.NewGame(gameState);
+                            // Start the Schrodinger animation.
+                             (new Task(() => animateDinger())).RunSynchronously();
+                            // start the intro text!
+                            await animateText("A wild Schrödinger appears!");
+                            await prompt(Prompt.Continue);
+                            await animateText("Schrödinger prepares his famous experiment!");
+                            await prompt(Prompt.Continue);
+                            gameState = gameMaster.Spin(gameState, seed);
+                            drawState(gameState);
+                        break;
+
+                        case State.Play:
+                            await animateText("what are you going to do??");
+                            await prompt(Prompt.Fire);
+                            
+                            switch (fireAction)
+                            {
+                                case GameAction.Observe:
+                                    gameState = gameMaster.Fire(gameState);
+                                    drawState(gameState);
+                                    await animateText("Schrödinger uses observe!");
+                                    await prompt(Prompt.Continue);
+                                    if (gameState.State == State.Play)
+                                    {
+                                        await animateText("Pusheen is alive!");
+                                        await prompt(Prompt.Continue);
+                                    }
+                                    break;
+
+                                case GameAction.Evade:
+                                    var gameState2 = gameMaster.Dodge(gameState);
+                                    if (gameState2 == null)
+                                    {
+                                        await animateText("You don't have any dodges left!");
+                                        await prompt(Prompt.Continue);
+                                    }
+                                    else
+                                    {
+                                        gameState = gameState2;
+                                    }
+                                    drawState(gameState);
+                                    await animateText("Pusheen uses blind!");
+                                    await prompt(Prompt.Continue);
+                                    await animateText("Schrödinger uses observe!");
+                                    await prompt(Prompt.Continue);
+                                    await animateText("He can't see!");
+                                    await prompt(Prompt.Continue);
+                                    break;
+                            }
+                            break;
+                        case State.Win:
+                            await animateText("Schrödinger gives up!");
+                            await prompt(Prompt.Continue);
+                            await animateText("YOU WIN!");
+                            await prompt(Prompt.Continue);
+                            gameState = gameMaster.NewGame(gameState);
+                            drawState(gameState);
+                            break;
+
+                        case State.Lose:
+                            await animateText("IT'S SUPER EFFECTIVE!!@!@!");
+                                    await prompt(Prompt.Continue);
+                            await animateText("Pusheen is dead");
+                                    await prompt(Prompt.Continue);
+                            gameState = gameMaster.NewGame(gameState);
+                            drawState(gameState);
+                            break;
+                    }
+             
+                //await animateText("He uses Observe, it's super effective");
+
             }
 
-            else
+        }
+
+        // here we want to only allow one button press at a time, so we create a semaphore to protect the semaphore.
+        private async Task prompt(Prompt prompt)
+        {
+            promptState = prompt;
+            switch (prompt)
+            {
+                case Prompt.Continue:
+                    await continueSem.WaitAsync();
+                    break;
+
+                case Prompt.Fire:
+                    btnBlind.Visible = true;
+                    btnObserve.Visible = true;  
+                    await fireSem.WaitAsync();
+                    btnBlind.Visible = false;
+                    btnObserve.Visible = false;  
+                        break;
+                }
+            promptState = Prompt.Off;
+        }
+
+        private void drawState(GameState state)
+        {
+            lblBlinds.Text = state.DodgesLeft.ToString();
+            lblLosses.Text = state.Loses.ToString();
+            lblTurns.Text  = (state.Position + 1).ToString();
+            lblWins.Text = state.Wins.ToString();
+
+        }
+        private async void animateDinger()
+        {
+            int dingerTimerCounter = dingerStartingPosition;
+            while (dingerTimerCounter != 0)
             {
                 dingerTimerCounter += 4;
 
                 var loc = picDinger.Location;
                 loc.Y = dingerTimerCounter;
                 picDinger.Location = loc;
+                await Task.Delay(16);
             }
         }
 
-        private void oddEven(Object sender, EventArgs e)
+        
+        private async void drawText(IProgress<string> btn)
         {
-            isOddSecond = !isOddSecond;
-        }
-        private void animateText(string text)
-        {
-            newText = true;
-            remainingText = text;
+            bool isDot = true;
+            int counter = 0;
+            while (true)
+            {
+                btn.Report(drawTextGo(isDot));
+
+                counter += textSpeed;
+                if (counter > 500)
+                {
+                    isDot = !isDot;
+                    counter = 0;
+                }
+
+                await Task.Delay(textSpeed);
+            }
         }
 
-        private void animateTextGo(Object sender, EventArgs e)
+        private string drawTextGo(bool isDot)
         {
-            var text = newText ? "" : btnGO.Text;
-            newText = false;
-            var dot = isOddSecond ? "." : " ";
-            var length = text.Length == 0 ? 0 : text.Length - 1;
+            var dot = isDot ? "." : " ";
+            return promptText + dot;
+        }
+        private async Task animateText(string text)
+        {
+            string textRemaining = text;
+            textRemaining = await animateTextGo(true, textRemaining);
+            while (textRemaining.Length != 0)
+            {
+                await Task.Delay(textSpeed);
+                textRemaining = await animateTextGo(false, textRemaining);
+            }
+        }
+
+        private async Task<string> animateTextGo(bool reset, string remainingText)
+        {
+            var text = reset ? "" : promptText;
+            var length = text.Length == 0 ? 0 : text.Length;
 
             var remaining = remainingText.Length == 0 ? "" : remainingText.Substring(0, 1);
 
-            btnGO.Text = text.Substring(0, length) + remaining + dot;
+            promptText = text.Substring(0, length) + remaining;
 
-            remainingText = remainingText.Length == 0 ? "" : remainingText.Substring(1, remainingText.Length - 1);
+            return remainingText.Length == 0 ? "" : remainingText.Substring(1, remainingText.Length - 1);
+        }
+
+        private void btnGO_Click(object sender, EventArgs e)
+        {
+            if (promptState != Prompt.Continue) return; // do nothing when we aint asking for anything.
+            try
+            { continueSem.Release(1); } // send the "continue" action to the prompt.
+            catch { };
+
+        }
+
+        private void btnObserve_Click(object sender, EventArgs e)
+        {
+            var savedFire = fireAction;
+            fireAction = GameAction.Observe;
+            try
+            { fireSem.Release(1); } // send the "Observe" action to the prompt
+            catch
+            { fireAction = savedFire; }
+ 
+        }
+
+        private void btnBlind_Click(object sender, EventArgs e)
+        {
+            var savedFire = fireAction;
+            fireAction = GameAction.Evade;
+            try
+            { fireSem.Release(1); } // send the "Blind/Evade" option to the prompt.
+            catch
+            { fireAction = savedFire; }
         }
     }
 }

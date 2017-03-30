@@ -91,5 +91,14 @@
   <ItemGroup>
     <None Include="Resources\CustomFont.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pusheen_excite.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\excite.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pusheen_back.gif" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
