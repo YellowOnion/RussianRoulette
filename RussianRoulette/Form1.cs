@@ -27,23 +27,15 @@ namespace RussianRoulette
     }
     public partial class Form1 : Form
     {
+
         private Prompt promptState = Prompt.Off;
 
-        string promptText = "";
-
-        private static int dingerStartingPosition = -396;
-
-        private int textSpeed = 50;
-
-        Task drawTask;
+        private string promptText = "";
 
         private SemaphoreSlim continueSem = new SemaphoreSlim(0,1);
         private SemaphoreSlim fireSem = new SemaphoreSlim(0,1);
         private GameAction fireAction;
 
-        private Game gameMaster = new Game();
-
-        private GameState gameState = new GameState();
 
         public Form1()
         {
@@ -69,6 +61,7 @@ namespace RussianRoulette
         }
         private async void Form1_Shown(object sender, EventArgs e)
         {
+            Task drawTask;
             var btn = new Progress<string>(s => btnGO.Text = s);
             drawTask = Task.Run(() => drawText(btn));
             await GameScript();
@@ -78,6 +71,9 @@ namespace RussianRoulette
             // seed and game loop.
             int seed = 554;
             bool newgame = true;
+            Game gameMaster = new Game();
+
+            GameState gameState = new GameState();
 
             while (newgame)
             {
@@ -192,6 +188,7 @@ namespace RussianRoulette
         }
         private async void animateDinger()
         {
+            int dingerStartingPosition = -396;
             int dingerTimerCounter = dingerStartingPosition;
             while (dingerTimerCounter != 0)
             {
@@ -207,6 +204,7 @@ namespace RussianRoulette
         
         private async void drawText(IProgress<string> btn)
         {
+            int textSpeed = 50;
             bool isDot = true;
             int counter = 0;
             while (true)
@@ -229,6 +227,7 @@ namespace RussianRoulette
             var dot = isDot ? "." : " ";
             return promptText + dot;
         }
+
         private async Task animateText(string text)
         {
             string textRemaining = text;
