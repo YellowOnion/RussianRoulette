@@ -89,7 +89,7 @@ namespace RussianRoulette
 
         public async Task GameScript()
         {
-            await animateText("Welcome to Schrödinger's Pusheen, click on this text to start a game");
+            await animateText("Welcome to Schrödinger's Pusheen, click on this box to continue");
             await prompt(Prompt.Continue);
 
             // seed and game loop.
