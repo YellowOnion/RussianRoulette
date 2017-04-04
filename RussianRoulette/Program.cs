@@ -44,6 +44,7 @@ namespace RussianRoulette
 
     public class Game
     {
+        // spin the Cylinder of the "revolver"
         public GameState Spin(GameState state, int seed)
         {
             state.State = State.Play;
@@ -52,6 +53,7 @@ namespace RussianRoulette
             return state;
         }
 
+        // this creates a new game.
         public GameState NewGame(GameState state)
         {
             switch (state.State)
@@ -82,6 +84,7 @@ namespace RussianRoulette
             return state;
         }
 
+        // this "fires" the gun.
         public GameState Fire(GameState state)
         {
             if (state.Moves[state.Position] == true)
@@ -100,6 +103,7 @@ namespace RussianRoulette
             return state;
         }
 
+        // this "fires" away the bullet, get out of jail free.
         public GameState Dodge(GameState state)
         {
             if (state.DodgesLeft <= 0) return null;

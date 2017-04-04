@@ -35,10 +35,11 @@ namespace RussianRoulette
         Win
     }
 
+    // this class controls all redrawing and sounds events.
     public class Controller
     {
         private Prompt promptState = Prompt.Off;
-        private int textSpeed = 50;
+        private int textSpeed = 32;
 
         public string promptText = "";
 
@@ -83,10 +84,12 @@ namespace RussianRoulette
             deadSound = new SoundPlayer("Resources\\dead.wav");
             winSound = new SoundPlayer("Resources\\win.wav");
 
+            /// this creates a stream of events for the button to be redrawn with.
             var btn = new Progress<string>(s => GOText.Text = s);
             drawTask = Task.Run(() => drawText(btn));
         } 
 
+        // this is the "script" for the game, controls text animations and sound events.
         public async Task GameScript()
         {
             await animateText("Welcome to Schrödinger's Pusheen, click on this box to continue");
@@ -126,8 +129,8 @@ namespace RussianRoulette
                                 case GameAction.Observe:
                                     gameState = gameMaster.Fire(gameState);
                                     drawState(gameState);
-                                    await animateText("Schrödinger uses observe!");
                                     playSound(Sounds.Observe);
+                                    await animateText("Schrödinger uses observe!");
                                     await prompt(Prompt.Continue);
                                     if (gameState.State == State.Play)
                                     {
@@ -148,11 +151,11 @@ namespace RussianRoulette
                                         gameState = gameState2;
                                     }
                                     drawState(gameState);
-                                    await animateText("Pusheen uses blind!");
                                     playSound(Sounds.Evade);
+                                    await animateText("Pusheen uses blind!");
                                     await prompt(Prompt.Continue);
-                                    await animateText("Schrödinger uses observe!");
                                     playSound(Sounds.Observe);
+                                    await animateText("Schrödinger uses observe!");
                                     await prompt(Prompt.Continue);
                                     await animateText("He can't see!");
                                     await prompt(Prompt.Continue);
@@ -162,8 +165,8 @@ namespace RussianRoulette
                         case State.Win:
                             await animateText("Schrödinger gives up!");
                             await prompt(Prompt.Continue);
-                            await animateText("YOU WIN!");
                             playSound(Sounds.Win);
+                            await animateText("YOU WIN!");
                             await prompt(Prompt.Continue);
                             gameState = gameMaster.NewGame(gameState);
                             drawState(gameState);
@@ -172,8 +175,8 @@ namespace RussianRoulette
                         case State.Lose:
                             await animateText("IT'S SUPER EFFECTIVE!!@!@!");
                             await prompt(Prompt.Continue);
-                            await animateText("Pusheen is dead");
                             playSound(Sounds.Dead);
+                            await animateText("Pusheen is dead");
                             await prompt(Prompt.Continue);
                             gameState = gameMaster.NewGame(gameState);
                             drawState(gameState);
@@ -184,11 +187,14 @@ namespace RussianRoulette
 
         }
 
+
+        // this plays the sound in the "background" synchronously.
         private void playSound(Sounds sound)
         {
             (new Task(() => playSoundReal(sound))).RunSynchronously();
         }
 
+        // This is where we play the sounds for real, needed something to be called for Task.
         private void playSoundReal(Sounds sound)
         {
             switch (sound)
@@ -209,7 +215,7 @@ namespace RussianRoulette
             }
         }
 
-        // here we want to only allow one button press at a time, so we create a semaphore to protect the semaphore.
+        // here we want to only allow one button press at a time, so we create a semaphore to protect the semaphore. yo dawg.
         private async Task prompt(Prompt prompt)
         {
             promptState = prompt;
@@ -230,6 +236,7 @@ namespace RussianRoulette
             promptState = Prompt.Off;
         }
 
+        // this is called when we want the score board updated.
         private void drawState(GameState state)
         {
             lblBlinds.Text = state.DodgesLeft.ToString();
@@ -238,6 +245,8 @@ namespace RussianRoulette
             lblWins.Text = state.Wins.ToString();
 
         }
+
+        // this animates the Schrodinger animation using Tasks and Task Delay.
         private async void animateDinger()
         {
             int dingerStartingPosition = -396;
@@ -253,13 +262,14 @@ namespace RussianRoulette
             }
         }
 
-        
+        // a loop with a delay to print each character to the screen one at at time.
         private async void drawText(IProgress<string> btn)
         {
             bool isDot = true;
             int counter = 0;
             while (true)
             {
+                // this reports back to the lambda that actualises the button label.
                 btn.Report(drawTextGo(isDot));
 
                 counter += textSpeed;
@@ -273,12 +283,15 @@ namespace RussianRoulette
             }
         }
 
+        // the blinking fullstop is added if needed.
         private string drawTextGo(bool isDot)
         {
             var dot = isDot ? "." : " ";
             return promptText + dot;
         }
 
+
+        // here we setup the string to be printed character by character.
         private async Task animateText(string text)
         {
             string textRemaining = text;
@@ -290,6 +303,7 @@ namespace RussianRoulette
             }
         }
 
+        /// this method  modifies the buttonGo string, ready for dot appendage.
         private async Task<string> animateTextGo(bool reset, string remainingText)
         {
             var text = reset ? "" : promptText;
@@ -302,6 +316,7 @@ namespace RussianRoulette
             return remainingText.Length == 0 ? "" : remainingText.Substring(1, remainingText.Length - 1);
         }
 
+        // some code to make all the button clicks safe from exploding in to a firery mess.
         public void PromptClick(GameAction gameAction)
         {
             var savedFire = fireAction;
